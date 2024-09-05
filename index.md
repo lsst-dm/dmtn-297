@@ -84,7 +84,10 @@ Cloud](https://dmtn-209.lsst.io/) more difficult.
 
 ## Butler database deployments
 
-(architecture diagram)
+The following diagram shows the databases that will exist in mid-2025 to
+support end user access to the Butler in the RSP:
+
+![System diagram](Butler%20databases.drawio.png)
 
 
 ### Data Preview 0.2
