@@ -134,7 +134,7 @@ usually use the newest version.
 The following diagram shows the databases that will exist in mid-2025 to
 support end user access to the Butler in the RSP:
 
-![System diagram](Butler%20databases.drawio.png)
+![System diagram](Butler-databases.drawio.png)
 
 
 ### Data Preview 0.2
