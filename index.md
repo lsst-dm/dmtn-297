@@ -52,9 +52,10 @@ Science Platform](https://phalanx.lsst.io/applications/tap/index.html).
 ##### QServ
 
 ObsCore via QServ is used for the annual data releases, because QServ provides
-a scalable cluster of database instances.  When the data release is made, [a
-script](https://github.com/lsst-dm/dax_obscore) is used to convert metadata
-from the Butler Registry DB into a format that can be ingested by QServ.
+a spatially partitioned, scalable cluster of database instances.  When the data
+release is made, [a script](https://github.com/lsst-dm/dax_obscore) is used to
+convert metadata from the Butler Registry DB into a format that can be ingested
+by QServ.
 
 QServ is not well-suited for dynamically updated data, so this setup is only
 used for static data releases.
@@ -68,11 +69,6 @@ that maintains an ObsCore table containing information about datasets in the
 Registry.  As datasets are added through the usual Butler methods for updating
 the Registry, the ObsCore table is updated simultaneously.
 
-For spatial indexing, the ObsCore table uses the [pg_sphere Postgres
-extension](https://github.com/postgrespro/pgsphere).  This extension is fairly
-niche, with few use cases outside of astronomy.  It is not supported by Google
-Cloud SQL, making deployment at the [Rubin Science Platform on Google
-Cloud](https://dmtn-209.lsst.io/) more difficult.
 
 ### Update modes
 
@@ -81,6 +77,10 @@ Different Butler repositories are updated at different cadences.  This affects:
 * How aggressively data can be cached by consumers
 * Which databases can be used
 
+Repositories may be entirely static, batch-updated on a regular schedule, or
+updated continuously as changes are made.
+
+(static)=
 #### Static
 
 Data releases are generated in full prior to their release to the public, and
@@ -100,9 +100,20 @@ configuration for Data Preview 1 and subsequent data releases.
 
 #### Batch update
 
-- no qserv
-- no IDF for ObsCore
+The prompt data products repository will be updated nightly as new data is
+released from embargo.  [A script](https://github.com/lsst-dm/transfer_embargo)
+copies data from the internal embargo repository to a separate public
+repository.
 
+For prompt data products, both Registry and ObsCore databases will be hosted in Postgres at USDF.  While
+the Registry could be hosted in Google Cloud SQL as in the [static](#static) case, there
+are technical limitations that make hosting ObsCore difficult:
+* QServ is not designed for dynamic updates, so it cannot host ObsCore for a
+  changing repository.
+* For spatial indexing in Postgres, the ObsCore manager uses the [pg_sphere
+Postgres extension](https://github.com/postgrespro/pgsphere).  This extension
+is not available in Google Cloud SQL, and it is unlikely to be supported in the
+future because it has few users outside of astronomy.
 
 #### Online, immediate update
 
@@ -115,7 +126,7 @@ Rubin project to end-users.
 
 However, there is a requirement that we provide hosting for end users to share
 data products that they have created.  For [Data Preview 0.2](#dp02)
-we allow end-users to write directly into the Registry database.
+we allow end-users to write directly into the Registry database, with changes immediately visible to other users.
 
 ### Metadata Schema ("Dimension Universe")
 
