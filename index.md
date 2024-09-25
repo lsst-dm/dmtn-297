@@ -105,6 +105,7 @@ replicas to scale the database load.
 See [below](#dp1) for more information about this
 configuration for Data Preview 1 and subsequent data releases.
 
+(batch-update)=
 #### Batch update
 
 The prompt data products repository will be updated nightly as new data is
@@ -112,16 +113,24 @@ released from embargo.  [A script](https://github.com/lsst-dm/transfer_embargo)
 copies data from the internal embargo repository to a separate public
 repository.
 
-For prompt data products, both Registry and ObsCore databases will be hosted in
-Postgres at USDF.  While the Registry could be hosted in Google Cloud SQL as in
-the [static](#static) case, there are technical limitations that make hosting
-ObsCore difficult:
+Because the data is updated in predictable ways at predictable times, the
+Butler server can still aggressively cache data as long as we invalidate the
+caches after the batch update.
+
+There are technical limitations with both available methods for hosting ObsCore that makes it difficult
+to host a frequently-changing ObsCore database:
 * QServ is not designed for dynamic updates, so it cannot host ObsCore for a
   changing repository.
 * For spatial indexing in Postgres, the ObsCore manager uses the [pg_sphere
 Postgres extension](https://github.com/postgrespro/pgsphere).  This extension
 is not available in Google Cloud SQL, and it is unlikely to be supported in the
 future because it has few users outside of astronomy.
+
+Consequently, we can currently only host a batch-updated ObsCore database in a 
+Postgres deployment at USDF, where we have control over the extensions
+available. (We could also host a custom Postgres deployment at Google using a
+virtual machine or Kubernetes, but the Butler team lacks a database
+administrator to manage this setup.)
 
 #### Online, immediate update
 
@@ -241,7 +250,7 @@ which is a scalable Postgres-compatible database.
 #### Summary
 * Status: Planned for 2025
 * Registry: Postgres at USDF
-* ObsCore: In same Postgres as registry at USDF
+* ObsCore: In same Postgres as Registry at USDF
 * Update mode: Batch (updated daily)
 
 From the start of the survey, [prompt data products](https://lse-163.lsst.io/)
@@ -249,11 +258,25 @@ will be released daily to the community.  This will require Butler Registry and
 ObsCore databases to support the same search functionality provided for the
 data releases.
 
-As data is released from [embargo](https://rtn-073.lsst.io), 
+As data is released from [embargo](https://rtn-073.lsst.io), it is copied from
+the embargo Butler repository to the public prompt data products repository
+using the [`transfer_embargo` script](https://github.com/lsst-dm/transfer_embargo).
+
+Initially, we plan to host both the Registry and ObsCore databases together in
+a single Postgres database at the USDF.  As discussed [above](#batch-update),
+we do not currently have a way to host ObsCore for this deployment anywhere but
+the USDF.  We also do not currently have a way to maintain an ObsCore table
+separate from the Registry, so it is expedient to have these databases together
+at USDF.
+
+A VPN or SSH tunnel to the services using this database at the IDF will secure
+the connection to the database.
 
 As the database grows, we may split the Registry database from the ObsCore
-database and move the Registry database to IDF.  Because the ObsCore table
-includes access URLs that require the Registry to resolve (via
+database and move the Registry database to IDF. This will reduce the round-trip
+time for services using the Butler, and let us use the same Google database
+hosting used for the data releases.  Because the ObsCore table includes
+access URLs that require the Registry to resolve (via
 [datalinker](https://github.com/lsst-sqre/datalinker/)), we will need to ensure
 that the Registry is updated before the ObsCore table is updated.
 
