@@ -271,16 +271,17 @@ which is a scalable Postgres-compatible database.
 * Status: Planned for 2025
 * Registry: Postgres at USDF
 * ObsCore: In same Postgres as Registry at USDF
-* Update mode: Batch (updated daily)
+* Update mode: Batch
 
 From the start of the survey, [prompt data products](https://lse-163.lsst.io/)
-will be released daily to the community.  This will require Butler Registry and
+will be released to the community.  This will require Butler Registry and
 ObsCore databases to support the same search functionality provided for the
 data releases.
 
 As data is released from [embargo](https://rtn-073.lsst.io), it is copied from
 the embargo Butler repository to the public prompt data products repository
 using the [`transfer_embargo` script](https://github.com/lsst-dm/transfer_embargo).
+This update will run periodically -- perhaps as often as once every 15 minutes.
 
 Initially, we plan to host both the Registry and ObsCore databases together in
 a single Postgres database at the USDF.  As discussed [above](#batch-update),
